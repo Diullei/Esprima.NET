@@ -54,6 +54,7 @@
     <Compile Include="PrimaryExpressionTest.cs" />
     <Compile Include="BasicTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="VariableStatementTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Esprima.NET\Esprima.NET.csproj">

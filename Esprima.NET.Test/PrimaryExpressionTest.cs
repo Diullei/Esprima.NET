@@ -4,7 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Esprima.NET.Test
 {
     [TestClass]
-    public class PrimaryExpressionTest
+    public class PrimaryExpressionTest : BaseTeste
     {
         [TestMethod]
         public void This()
@@ -18,13 +18,9 @@ namespace Esprima.NET.Test
 
             // =================================== Program
             // - range
-            Assert.AreEqual(0, tree.Range.Start);
-            Assert.AreEqual(5, tree.Range.End);
+            VerifyRange(tree, 0, 5);
             // - loc
-            Assert.AreEqual(1, tree.Loc.Start.Line);
-            Assert.AreEqual(0, tree.Loc.Start.Column);
-            Assert.AreEqual(2, tree.Loc.End.Line);
-            Assert.AreEqual(0, tree.Loc.End.Column);
+            VerifyLocation(tree, 1, 0, 2, 0);
 
             Assert.AreEqual(1, tree.Body.Count);
 
@@ -32,25 +28,17 @@ namespace Esprima.NET.Test
             Assert.IsTrue(tree.Body[0] is ExpressionStatement);
             var expr = (ExpressionStatement)tree.Body[0];
             // - range
-            Assert.AreEqual(0, expr.Range.Start);
-            Assert.AreEqual(4, expr.Range.End);
+            VerifyRange(tree, 0, 5);
             // - loc
-            Assert.AreEqual(1, expr.Loc.Start.Line);
-            Assert.AreEqual(0, expr.Loc.Start.Column);
-            Assert.AreEqual(1, expr.Loc.End.Line);
-            Assert.AreEqual(4, expr.Loc.End.Column);
+            VerifyLocation(tree, 1, 0, 2, 0);
 
             // =================================== ThisExpression
             Assert.IsTrue(expr.Expression is ThisExpression);
             var @this = (ThisExpression)expr.Expression;
             // - range
-            Assert.AreEqual(0, @this.Range.Start);
-            Assert.AreEqual(4, @this.Range.End);
+            VerifyRange(@this, 0, 4);
             // - loc
-            Assert.AreEqual(1, @this.Loc.Start.Line);
-            Assert.AreEqual(0, @this.Loc.Start.Column);
-            Assert.AreEqual(1, @this.Loc.End.Line);
-            Assert.AreEqual(4, @this.Loc.End.Column);
+            VerifyLocation(@this, 1, 0, 1, 4);
 
             // =================================== Tokens
             Assert.AreEqual(1, tree.Extra.Tokens.Count);

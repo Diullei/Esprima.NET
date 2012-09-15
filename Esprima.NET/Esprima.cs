@@ -1705,13 +1705,19 @@ namespace Esprima.NET
                 {
                     ThrowError(token, Messages.StrictOctalLiteral);
                 }
-                return CreateLiteral(start, token);
+                return CreateLiteral(token);
             }
 
             return new Identifier(_codeGeneration)
             {
                 Name = token.Value,
-                Range = new Range() { Start = start, End = _index /*- _lineNumber  + 1/*xxx*/}
+                Range = new Range { Start = token.Range.Start, End = token.Range.End },
+                Loc =
+                    new Loc
+                    {
+                        Start = new Loc.Position { Line = token.Loc.Start.Line, Column = token.Loc.Start.Column },
+                        End = new Loc.Position { Line = token.Loc.End.Line, Column = token.Loc.End.Column }
+                    }
             };
         }
 
@@ -1889,7 +1895,7 @@ namespace Esprima.NET
                 {
                     ThrowErrorTolerant(token, Messages.StrictOctalLiteral);
                 }
-                return CreateLiteral(start, Lex());
+                return CreateLiteral(Lex());
             }
 
             if (type == TokenType.Keyword)
@@ -1920,14 +1926,14 @@ namespace Esprima.NET
             {
                 Lex();
                 token.Value = (token.Value == "true").ToString();
-                return CreateLiteral(start, token);
+                return CreateLiteral(token);
             }
 
             if (type == TokenType.NullLiteral)
             {
                 Lex();
                 token.Value = null;
-                return CreateLiteral(start, token);
+                return CreateLiteral(token);
             }
 
             if (Match("["))
@@ -1951,7 +1957,7 @@ namespace Esprima.NET
 
             if (Match("/") || Match("/="))
             {
-                return CreateLiteral(start, ScanRegExp());
+                return CreateLiteral(ScanRegExp());
             }
 
             ThrowUnexpected(Lex());
@@ -1996,8 +2002,14 @@ namespace Esprima.NET
 
             return new Identifier(_codeGeneration)
             {
-                //Type = Syntax.Identifier,
-                Name = token.Value
+                Name = token.Value,
+                Range = new Range { Start = token.Range.Start, End = token.Range.End },
+                Loc =
+                    new Loc
+                    {
+                        Start = new Loc.Position { Line = token.Loc.Start.Line, Column = token.Loc.Start.Column },
+                        End = new Loc.Position { Line = token.Loc.End.Line, Column = token.Loc.End.Column }
+                    }
             };
         }
 
@@ -2616,16 +2628,24 @@ namespace Esprima.NET
 
             return new Identifier(_codeGeneration)
             {
-                //Type = Syntax.Identifier,
-                Name = token.Value
+                Name = token.Value,
+                Range = new Range { Start = token.Range.Start, End = token.Range.End },
+                Loc =
+                    new Loc
+                    {
+                        Start = new Loc.Position { Line = token.Loc.Start.Line, Column = token.Loc.Start.Column },
+                        End = new Loc.Position { Line = token.Loc.End.Line, Column = token.Loc.End.Column }
+                    }
             };
         }
 
         private dynamic ParseVariableDeclaration(string kind)
         {
-            var start = _index - _lineNumber;// +2; //xxx
+
             var id = ParseVariableIdentifier();
             dynamic init = null;
+
+            var firstToken = _extra.Tokens[_extra.Tokens.Count - 1];
 
             // 12.2.1
             if (_strict && IsRestrictedWord(id.Name))
@@ -2644,11 +2664,44 @@ namespace Esprima.NET
                 init = ParseAssignmentExpression();
             }
 
+            Token lastToken = null;
+
+            if (init != null)
+                lastToken = new Token
+                                {
+                                    Range = new Token.TokenRange
+                                                {
+                                                    Start = init.Range.Start,
+                                                    End = init.Range.End
+                                                },
+                                    Loc = new Token.TokenLoc
+                                              {
+                                                  Start = new Token.TokenLoc.TokenPosition
+                                                              {
+                                                                  Line = init.Loc.Start.Line,
+                                                                  Column = init.Loc.Start.Column
+                                                              },
+                                                  End = new Token.TokenLoc.TokenPosition
+                                                            {
+                                                                Line = init.Loc.End.Line,
+                                                                Column = init.Loc.End.Column
+                                                            }
+                                              }
+                                };
+            else
+                lastToken = firstToken;
+
             return new VariableDeclarator(_codeGeneration)
             {
                 Id = id,
                 Init = init,
-                Range = new Range() { Start = start, End = _index /*- _lineNumber + 1/*xxx*/}
+                Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
+                Loc =
+                    new Loc
+                    {
+                        Start = new Loc.Position { Line = firstToken.Loc.Start.Line, Column = firstToken.Loc.Start.Column },
+                        End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
+                    }
             };
         }
 
@@ -2674,7 +2727,11 @@ namespace Esprima.NET
 
             ExpectKeyword("var");
 
+            var firstToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
             var declarations = ParseVariableDeclarationList(null);
+
+            var lastToken = _extra.Tokens[_extra.Tokens.Count - 1];
 
             ConsumeSemicolon();
 
@@ -2682,7 +2739,14 @@ namespace Esprima.NET
             {
                 //Type = Syntax.VariableDeclaration,
                 Declarations = declarations,
-                Kind = "var"
+                Kind = "var",
+                Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
+                Loc =
+                    new Loc
+                    {
+                        Start = new Loc.Position { Line = firstToken.Loc.Start.Line, Column = firstToken.Loc.Start.Column },
+                        End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
+                    }
             };
         }
 
@@ -4202,13 +4266,19 @@ namespace Esprima.NET
             //extra.tokens = tokens;
         }
 
-        private dynamic CreateLiteral(int start, Token token)
+        private dynamic CreateLiteral(Token token)
         {
             return new Literal(_codeGeneration)
             {
                 IsString = token.Type == TokenType.StringLiteral,
                 Value = token.Value,
-                Range = new Range() { Start = start, End = _index /*- _lineNumber + 1 /*xxx*/}
+                Range = new Range { Start = token.Range.Start, End = token.Range.End },
+                Loc =
+                    new Loc
+                    {
+                        Start = new Loc.Position { Line = token.Loc.Start.Line, Column = token.Loc.Start.Column },
+                        End = new Loc.Position { Line = token.Loc.End.Line, Column = token.Loc.End.Column }
+                    }
             };
         }
 
