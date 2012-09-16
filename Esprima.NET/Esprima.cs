@@ -2047,11 +2047,19 @@ namespace Esprima.NET
 
         private dynamic ParseCallMember(dynamic obj)
         {
-            return new
+            var token = _extra.Tokens[_extra.Tokens.Count - 1];
+
+            return new CallExpression(_codeGeneration)
             {
-                Type = Syntax.CallExpression,
                 Callee = obj,
-                Arguments = ParseArguments()
+                Arguments = ParseArguments(),
+                Range = new Range { Start = token.Range.Start, End = token.Range.End },
+                Loc =
+                    new Loc
+                    {
+                        Start = new Loc.Position { Line = token.Loc.Start.Line, Column = token.Loc.Start.Column },
+                        End = new Loc.Position { Line = token.Loc.End.Line, Column = token.Loc.End.Column }
+                    }
             };
         }
 
@@ -2241,7 +2249,7 @@ namespace Esprima.NET
 
                 expr = new BinaryExpression(_codeGeneration)
                 {
-                    Operator = Lex().Value,
+                    Operator = op,
                     Left = expr,
                     Right = r,
                     Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
