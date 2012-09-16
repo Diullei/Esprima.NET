@@ -77,7 +77,7 @@ namespace Esprima.NET
 
                     #endregion
 
-                #region "ExpressionStatement"
+                    #region "ExpressionStatement"
 
                 case "ExpressionStatement":
                     var expression = (syntax as ExpressionStatement);
@@ -86,7 +86,7 @@ namespace Esprima.NET
 
                     #endregion
 
-                #region "ThisExpression"
+                    #region "ThisExpression"
 
                 case "ThisExpression":
                     var thisExpression = (syntax as ThisExpression);
@@ -94,7 +94,7 @@ namespace Esprima.NET
 
                     break;
 
-                #endregion
+                    #endregion
             }
 
             return sb.ToString();
