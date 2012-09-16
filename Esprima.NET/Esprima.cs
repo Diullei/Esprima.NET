@@ -1626,7 +1626,7 @@ namespace Esprima.NET
 
         private bool IsLeftHandSide(dynamic expr)
         {
-            return expr.Type == Syntax.Identifier || expr.Type == Syntax.MemberExpression;
+            return ((expr is ISyntax && expr is Identifier) || expr.Type == Syntax.Identifier) || expr.Type == Syntax.MemberExpression;
         }
 
         // 11.1.4 Array Initialiser
@@ -1875,17 +1875,21 @@ namespace Esprima.NET
 
         private dynamic ParsePrimaryExpression()
         {
-            var start = _index;// -_lineNumber +2;//xxx
-
             var token = Lookahead();
             var type = token.Type;
 
             if (type == TokenType.Identifier)
             {
-                return new
+                return new Identifier(_codeGeneration)
                 {
-                    Type = Syntax.Identifier,
-                    Name = Lex().Value
+                    Name = Lex().Value,
+                    Range = new Range { Start = token.Range.Start, End = token.Range.End },
+                    Loc =
+                        new Loc
+                        {
+                            Start = new Loc.Position { Line = token.Loc.Start.Line, Column = token.Loc.Start.Column },
+                            End = new Loc.Position { Line = token.Loc.End.Line, Column = token.Loc.End.Column }
+                        }
                 };
             }
 
@@ -2513,7 +2517,7 @@ namespace Esprima.NET
         // 11.13 Assignment Operators
         private dynamic ParseAssignmentExpression()
         {
-
+            var firstToken = _extra.Tokens[_extra.Tokens.Count - 1];
             var expr = ParseConditionalExpression();
 
             if (MatchAssign())
@@ -2525,23 +2529,34 @@ namespace Esprima.NET
                 }
 
                 // 11.13.1
-                if (_strict && expr.Type == Syntax.Identifier && IsRestrictedWord(expr.Name))
+                if (_strict && ((expr is ISyntax && expr is Identifier) || expr.Type == Syntax.Identifier) && IsRestrictedWord(expr.Name))
                 {
                     ThrowError(null, Messages.StrictLHSAssignment);
                 }
 
                 // ES.next draf 11.13 Runtime Semantics step 1
-                if (expr.Type == Syntax.ObjectExpression || expr.Type == Syntax.ArrayExpression)
+                if ((!(expr is ISyntax) && (expr.Type == Syntax.ObjectExpression)) || (!(expr is ISyntax) && (expr.Type == Syntax.ArrayExpression)))
                 {
                     ReinterpretAsAssignmentBindingPattern(expr);
                 }
 
-                expr = new
+                var op = Lex().Value;
+                var r = ParseAssignmentExpression();
+
+                var lastToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
+                expr = new AssignmentExpression(_codeGeneration)
                 {
-                    Type = Syntax.AssignmentExpression,
-                    Operator = Lex().Value,
+                    Operator = op,
                     Left = expr,
-                    Right = ParseAssignmentExpression()
+                    Right = r,
+                    Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
+                    Loc =
+                        new Loc
+                        {
+                            Start = new Loc.Position { Line = firstToken.Loc.Start.Line, Column = firstToken.Loc.Start.Column },
+                            End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
+                        }
                 };
             }
 
@@ -3534,13 +3549,7 @@ namespace Esprima.NET
                 }
             }
 
-            var start = _index;
-            var line = _lineNumber;
-            var col = _index - _lineStart;
-
             expr = ParseExpression();
-
-            var endRange = _index;
 
             // 12.12 Labelled Statements
             if ((expr is ISyntax && expr is Identifier) && Match(':'))
@@ -3565,20 +3574,19 @@ namespace Esprima.NET
                 };
             }
 
-            var lineEnd = _lineNumber;
-            var colEnd = _index - _lineStart;
+            var lastToken = _extra.Tokens[_extra.Tokens.Count - 1];
 
             ConsumeSemicolon();
 
             return new ExpressionStatement(_codeGeneration)
             {
                 Expression = expr,
-                Range = new Range { Start = start, End = endRange },
+                Range = new Range { Start = token.Range.Start, End = lastToken.Range.End },
                 Loc =
                     new Loc
                     {
-                        Start = new Loc.Position { Line = line, Column = col },
-                        End = new Loc.Position { Line = lineEnd, Column = colEnd }
+                        Start = new Loc.Position { Line = token.Loc.Start.Line, Column = token.Loc.Start.Column },
+                        End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
                     }
             };
         }
@@ -3668,7 +3676,6 @@ namespace Esprima.NET
 
         private dynamic ParseFunctionDeclaration()
         {
-            //var id, param, params = [], body, token, firstRestricted, message, previousStrict, paramSet;
             Token firstRestricted = null;
             bool previousStrict;
             string message = null;

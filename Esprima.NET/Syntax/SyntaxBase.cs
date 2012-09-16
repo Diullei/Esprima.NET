@@ -5,6 +5,11 @@ namespace Esprima.NET.Syntax
         public Range Range { get; set; }
         public Loc Loc { get; set; }
 
+        public string Type
+        {
+            get { return this.GetType().Name; }
+        }
+
         protected ICodeGeneration Generation { get; set; }
 
         protected SyntaxBase(ICodeGeneration generation)
