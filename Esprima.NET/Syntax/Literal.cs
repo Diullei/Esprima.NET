@@ -4,22 +4,23 @@ namespace Esprima.NET.Syntax
 {
     public class Literal : SyntaxBase
     {
+        private string _value;
+
         public Literal(ICodeGeneration generation) : base(generation)
         {
         }
 
-        public object Value { get; set; }
-        public bool IsString { get; set; }
-    }
-
-    public class AssignmentExpression : SyntaxBase
-    {
-        public AssignmentExpression(ICodeGeneration generation) : base(generation)
+        public string Value
         {
+            get
+            {
+                return ((_value == "True" || _value == "False") && !IsString)
+                           ? _value == "True" ? "true" : "false"
+                           : _value;
+            }
+            set { _value = value; }
         }
 
-        public string Operator { get; set; }
-        public Identifier Left { get; set; }
-        public dynamic Right { get; set; }
+        public bool IsString { get; set; }
     }
 }

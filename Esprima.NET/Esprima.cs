@@ -2228,16 +2228,29 @@ namespace Esprima.NET
 
         private dynamic ParseMultiplicativeExpression()
         {
+            var firstToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
             var expr = ParseUnaryExpression();
 
             while (Match('*') || Match('/') || Match('%'))
             {
-                expr = new
+                var op = Lex().Value;
+                var r = ParseUnaryExpression();
+
+                var lastToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
+                expr = new BinaryExpression(_codeGeneration)
                 {
-                    Type = Syntax.BinaryExpression,
                     Operator = Lex().Value,
                     Left = expr,
-                    Right = ParseUnaryExpression()
+                    Right = r,
+                    Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
+                    Loc =
+                        new Loc
+                        {
+                            Start = new Loc.Position { Line = firstToken.Loc.Start.Line, Column = firstToken.Loc.Start.Column },
+                            End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
+                        }
                 };
             }
 
@@ -2248,16 +2261,30 @@ namespace Esprima.NET
 
         private dynamic ParseAdditiveExpression()
         {
+            var firstToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
             var expr = ParseMultiplicativeExpression();
 
             while (Match('+') || Match('-'))
             {
-                expr = new
+
+                var op = Lex().Value;
+                var r = ParseUnaryExpression();
+
+                var lastToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
+                expr = new BinaryExpression(_codeGeneration)
                 {
-                    Type = Syntax.BinaryExpression,
-                    Operator = Lex().Value,
+                    Operator = op,
                     Left = expr,
-                    Right = ParseMultiplicativeExpression()
+                    Right = r,
+                    Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
+                    Loc =
+                        new Loc
+                        {
+                            Start = new Loc.Position { Line = firstToken.Loc.Start.Line, Column = firstToken.Loc.Start.Column },
+                            End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
+                        }
                 };
             }
 
