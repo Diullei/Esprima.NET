@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Esprima.NET.Syntax
 {
     public class ExpressionStatement : SyntaxBase
@@ -9,15 +7,5 @@ namespace Esprima.NET.Syntax
         }
 
         public dynamic Expression { get; set; }
-    }
-
-    public class CallExpression : SyntaxBase
-    {
-        public CallExpression(ICodeGeneration generation) : base(generation)
-        {
-        }
-
-        public Identifier Callee { get; set; }
-        public List<dynamic> Arguments { get; set; }
     }
 }
