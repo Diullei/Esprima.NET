@@ -48,6 +48,7 @@
     <Compile Include="Syntax\AssignmentExpression.cs" />
     <Compile Include="Syntax\ExpressionStatement.cs" />
     <Compile Include="Syntax\Identifier.cs" />
+    <Compile Include="Syntax\IfStatement.cs" />
     <Compile Include="Syntax\ISyntax.cs" />
     <Compile Include="Syntax\Literal.cs" />
     <Compile Include="Syntax\Loc.cs" />

@@ -2275,7 +2275,6 @@ namespace Esprima.NET
 
             while (Match('+') || Match('-'))
             {
-
                 var op = Lex().Value;
                 var r = ParseUnaryExpression();
 
@@ -2303,16 +2302,29 @@ namespace Esprima.NET
 
         private dynamic ParseShiftExpression()
         {
+            var firstToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
             var expr = ParseAdditiveExpression();
 
             while (Match("<<") || Match(">>") || Match(">>>"))
             {
-                expr = new
+                var op = Lex().Value;
+                var r = ParseAdditiveExpression(); 
+
+                var lastToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
+                expr = new BinaryExpression(_codeGeneration)
                 {
-                    Type = Syntax.BinaryExpression,
-                    Operator = Lex().Value,
+                    Operator = op,
                     Left = expr,
-                    Right = ParseAdditiveExpression()
+                    Right = r,
+                    Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
+                    Loc =
+                        new Loc
+                        {
+                            Start = new Loc.Position { Line = firstToken.Loc.Start.Line, Column = firstToken.Loc.Start.Column },
+                            End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
+                        }
                 };
             }
 
@@ -2324,6 +2336,7 @@ namespace Esprima.NET
         private dynamic ParseRelationalExpression()
         {
             //var expr, previousAllowIn;
+            var firstToken = _extra.Tokens[_extra.Tokens.Count - 1];
 
             var previousAllowIn = _state.AllowIn;
             _state.AllowIn = true;
@@ -2333,12 +2346,23 @@ namespace Esprima.NET
             while (Match('<') || Match('>') || Match("<=") || Match(">=") || (previousAllowIn && MatchKeyword("in")) ||
                    MatchKeyword("instanceof"))
             {
-                expr = new
+                var op = Lex().Value;
+                var r = ParseShiftExpression();
+
+                var lastToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
+                expr = new BinaryExpression(_codeGeneration)
                 {
-                    Type = Syntax.BinaryExpression,
-                    Operator = Lex().Value,
+                    Operator = op,
                     Left = expr,
-                    Right = ParseShiftExpression()
+                    Right = r,
+                    Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
+                    Loc =
+                        new Loc
+                        {
+                            Start = new Loc.Position { Line = firstToken.Loc.Start.Line, Column = firstToken.Loc.Start.Column },
+                            End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
+                        }
                 };
             }
 
@@ -2350,16 +2374,29 @@ namespace Esprima.NET
 
         private dynamic ParseEqualityExpression()
         {
+            var firstToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
             var expr = ParseRelationalExpression();
 
             while (Match("==") || Match("!=") || Match("===") || Match("!=="))
             {
-                expr = new
+                var op = Lex().Value;
+                var r = ParseRelationalExpression();
+
+                var lastToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
+                expr = new BinaryExpression(_codeGeneration)
                 {
-                    Type = Syntax.BinaryExpression,
-                    Operator = Lex().Value,
+                    Operator = op,
                     Left = expr,
-                    Right = ParseRelationalExpression()
+                    Right = r,
+                    Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
+                    Loc =
+                        new Loc
+                        {
+                            Start = new Loc.Position { Line = firstToken.Loc.Start.Line, Column = firstToken.Loc.Start.Column },
+                            End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
+                        }
                 };
             }
 
@@ -2370,17 +2407,30 @@ namespace Esprima.NET
 
         private dynamic ParseBitwiseANDExpression()
         {
+            var firstToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
             var expr = ParseEqualityExpression();
 
             while (Match('&'))
             {
                 Lex();
-                expr = new
+
+                var r = ParseEqualityExpression();
+
+                var lastToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
+                expr = new BinaryExpression(_codeGeneration)
                 {
-                    Type = Syntax.BinaryExpression,
                     Operator = "&",
                     Left = expr,
-                    Right = ParseEqualityExpression()
+                    Right = r,
+                    Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
+                    Loc =
+                        new Loc
+                        {
+                            Start = new Loc.Position { Line = firstToken.Loc.Start.Line, Column = firstToken.Loc.Start.Column },
+                            End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
+                        }
                 };
             }
 
@@ -2389,17 +2439,30 @@ namespace Esprima.NET
 
         private dynamic ParseBitwiseXORExpression()
         {
+            var firstToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
             var expr = ParseBitwiseANDExpression();
 
             while (Match('^'))
             {
                 Lex();
-                expr = new
+
+                var r = ParseBitwiseANDExpression();
+
+                var lastToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
+                expr = new BinaryExpression(_codeGeneration)
                 {
-                    Type = Syntax.BinaryExpression,
                     Operator = "^",
                     Left = expr,
-                    Right = ParseBitwiseANDExpression()
+                    Right = r,
+                    Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
+                    Loc =
+                        new Loc
+                        {
+                            Start = new Loc.Position { Line = firstToken.Loc.Start.Line, Column = firstToken.Loc.Start.Column },
+                            End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
+                        }
                 };
             }
 
@@ -2408,17 +2471,30 @@ namespace Esprima.NET
 
         private dynamic ParseBitwiseORExpression()
         {
+            var firstToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
             var expr = ParseBitwiseXORExpression();
 
             while (Match('|'))
             {
                 Lex();
-                expr = new
+
+                var r = ParseBitwiseXORExpression();
+
+                var lastToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
+                expr = new BinaryExpression(_codeGeneration)
                 {
-                    Type = Syntax.BinaryExpression,
                     Operator = "|",
                     Left = expr,
-                    Right = ParseBitwiseXORExpression()
+                    Right = r,
+                    Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
+                    Loc =
+                        new Loc
+                        {
+                            Start = new Loc.Position { Line = firstToken.Loc.Start.Line, Column = firstToken.Loc.Start.Column },
+                            End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
+                        }
                 };
             }
 
@@ -2866,6 +2942,8 @@ namespace Esprima.NET
 
             ExpectKeyword("if");
 
+            var firstToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
             Expect('(');
 
             var test = ParseExpression();
@@ -2884,12 +2962,20 @@ namespace Esprima.NET
                 alternate = null;
             }
 
-            return new
+            var lastToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
+            return new IfStatement(_codeGeneration)
             {
-                Type = Syntax.IfStatement,
                 Test = test,
                 Consequent = consequent,
-                Alternate = alternate
+                Alternate = alternate,
+                Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
+                Loc =
+                    new Loc
+                    {
+                        Start = new Loc.Position { Line = firstToken.Loc.Start.Line, Column = firstToken.Loc.Start.Column },
+                        End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
+                    }
             };
         }
 
