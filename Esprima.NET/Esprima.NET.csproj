@@ -46,6 +46,7 @@
     <Compile Include="JsCodeGeneration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Syntax\AssignmentExpression.cs" />
+    <Compile Include="Syntax\BlockStatement.cs" />
     <Compile Include="Syntax\ExpressionStatement.cs" />
     <Compile Include="Syntax\Identifier.cs" />
     <Compile Include="Syntax\IfStatement.cs" />

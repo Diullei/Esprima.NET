@@ -2727,17 +2727,26 @@ namespace Esprima.NET
 
         private dynamic ParseBlock()
         {
-
             Expect('{');
+
+            var firstToken = _extra.Tokens[_extra.Tokens.Count - 1];
 
             var block = ParseStatementList();
 
             Expect('}');
 
-            return new
+            var lastToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
+            return new BlockStatement(_codeGeneration)
             {
-                Type = Syntax.BlockStatement,
-                Body = block
+                Body = block,
+                Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
+                Loc =
+                    new Loc
+                    {
+                        Start = new Loc.Position { Line = firstToken.Loc.Start.Line, Column = firstToken.Loc.Start.Column },
+                        End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
+                    }
             };
         }
 
@@ -3724,6 +3733,8 @@ namespace Esprima.NET
 
             Expect('{');
 
+            var firstToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
             while (_index < _length)
             {
                 token = Lookahead();
@@ -3783,15 +3794,23 @@ namespace Esprima.NET
 
             Expect('}');
 
+            var lastToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
             _state.LabelSet = oldLabelSet;
             _state.InIteration = oldInIteration;
             _state.InSwitch = oldInSwitch;
             _state.InFunctionBody = oldInFunctionBody;
 
-            return new
+            return new BlockStatement(_codeGeneration)
             {
-                Type = Syntax.BlockStatement,
-                Body = sourceElements
+                Body = sourceElements,
+                Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
+                Loc =
+                    new Loc
+                    {
+                        Start = new Loc.Position { Line = firstToken.Loc.Start.Line, Column = firstToken.Loc.Start.Column },
+                        End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
+                    }
             };
         }
 
