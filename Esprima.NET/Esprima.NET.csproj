@@ -48,6 +48,7 @@
     <Compile Include="Syntax\AssignmentExpression.cs" />
     <Compile Include="Syntax\BlockStatement.cs" />
     <Compile Include="Syntax\CallExpression.cs" />
+    <Compile Include="Syntax\EmptyStatement.cs" />
     <Compile Include="Syntax\ExpressionStatement.cs" />
     <Compile Include="Syntax\Identifier.cs" />
     <Compile Include="Syntax\IfStatement.cs" />

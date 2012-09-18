@@ -2911,10 +2911,7 @@ namespace Esprima.NET
         {
             Expect(';');
 
-            return new
-            {
-                Type = Syntax.EmptyStatement
-            };
+            return new EmptyStatement(_codeGeneration);
         }
 
         // 12.4 Expression Statement
