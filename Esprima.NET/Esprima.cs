@@ -1657,9 +1657,8 @@ namespace Esprima.NET
 
             Expect("]");
 
-            return new
+            return new ArrayExpression(_codeGeneration)
             {
-                Type = Syntax.ArrayExpression,
                 Elements = elements
             };
         }
@@ -2019,12 +2018,24 @@ namespace Esprima.NET
 
         private dynamic ParseNonComputedMember(dynamic obj)
         {
-            return new
+            var firstToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
+            var prop = ParseNonComputedProperty();
+
+            var lastToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
+            return new MemberExpression(_codeGeneration)
             {
-                Type = Syntax.MemberExpression,
                 Computed = false,
                 Object = obj,
-                Property = ParseNonComputedProperty()
+                Property = prop,
+                Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
+                Loc =
+                    new Loc
+                    {
+                        Start = new Loc.Position { Line = firstToken.Loc.Start.Line, Column = firstToken.Loc.Start.Column },
+                        End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
+                    }
             };
         }
 
@@ -2033,13 +2044,22 @@ namespace Esprima.NET
             //var property, expr;
 
             Expect("[");
+            var firstToken = _extra.Tokens[_extra.Tokens.Count - 1];
             var property = ParseExpression();
-            var expr = new
+            var lastToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
+            var expr = new MemberExpression(_codeGeneration)
             {
-                Type = Syntax.MemberExpression,
                 Computed = true,
                 Object = obj,
-                Property = property
+                Property = property,
+                Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
+                Loc =
+                    new Loc
+                    {
+                        Start = new Loc.Position { Line = firstToken.Loc.Start.Line, Column = firstToken.Loc.Start.Column },
+                        End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
+                    }
             };
             Expect("]");
             return expr;
@@ -2147,6 +2167,8 @@ namespace Esprima.NET
         {
             var expr = ParseLeftHandSideExpressionAllowCall();
 
+            var firstToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
             if ((Match("++") || Match("--")) && !PeekLineTerminator())
             {
                 // 11.3.1, 11.3.2
@@ -2160,12 +2182,20 @@ namespace Esprima.NET
                     ThrowError(null, Messages.InvalidLHSInAssignment);
                 }
 
-                expr = new
+                var lastToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
+                expr = new UpdateExpression(_codeGeneration)
                 {
-                    Type = Syntax.UpdateExpression,
                     Operator = Lex().Value,
                     Argument = expr,
-                    Prefix = false
+                    Prefix = false,
+                    Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
+                    Loc =
+                        new Loc
+                        {
+                            Start = new Loc.Position { Line = firstToken.Loc.Start.Line, Column = firstToken.Loc.Start.Column },
+                            End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
+                        }
                 };
             }
 
@@ -2177,6 +2207,7 @@ namespace Esprima.NET
         private dynamic ParseUnaryExpression()
         {
             //var token, expr;
+            var firstToken = _extra.Tokens[_extra.Tokens.Count - 1];
 
             if (Match("++") || Match("--"))
             {
@@ -2193,12 +2224,20 @@ namespace Esprima.NET
                     ThrowError(null, Messages.InvalidLHSInAssignment);
                 }
 
-                expr = new
+                var lastToken = _extra.Tokens[_extra.Tokens.Count - 1];
+
+                expr = new UpdateExpression(_codeGeneration)
                 {
-                    Type = Syntax.UpdateExpression,
                     Operator = token.Value,
                     Argument = expr,
-                    Prefix = true
+                    Prefix = true,
+                    Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
+                    Loc =
+                        new Loc
+                        {
+                            Start = new Loc.Position { Line = firstToken.Loc.Start.Line, Column = firstToken.Loc.Start.Column },
+                            End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
+                        }
                 };
                 return expr;
             }
@@ -2802,42 +2841,65 @@ namespace Esprima.NET
             Token lastToken = null;
 
             if (init != null)
-                lastToken = new Token
-                                {
-                                    Range = new Token.TokenRange
-                                                {
-                                                    Start = init.Range.Start,
-                                                    End = init.Range.End
-                                                },
-                                    Loc = new Token.TokenLoc
-                                              {
-                                                  Start = new Token.TokenLoc.TokenPosition
-                                                              {
-                                                                  Line = init.Loc.Start.Line,
-                                                                  Column = init.Loc.Start.Column
-                                                              },
-                                                  End = new Token.TokenLoc.TokenPosition
-                                                            {
-                                                                Line = init.Loc.End.Line,
-                                                                Column = init.Loc.End.Column
-                                                            }
-                                              }
-                                };
+            {
+                if (init.Type != "ArrayExpression")
+                {
+                    lastToken = new Token
+                                    {
+                                        Range = new Token.TokenRange
+                                                    {
+                                                        Start = init.Range.Start,
+                                                        End = init.Range.End
+                                                    },
+                                        Loc = new Token.TokenLoc
+                                                  {
+                                                      Start = new Token.TokenLoc.TokenPosition
+                                                                  {
+                                                                      Line = init.Loc.Start.Line,
+                                                                      Column = init.Loc.Start.Column
+                                                                  },
+                                                      End = new Token.TokenLoc.TokenPosition
+                                                                {
+                                                                    Line = init.Loc.End.Line,
+                                                                    Column = init.Loc.End.Column
+                                                                }
+                                                  }
+                                    };
+                }
+            }
             else
                 lastToken = firstToken;
 
-            return new VariableDeclarator(_codeGeneration)
+            if (lastToken != null)
             {
-                Id = id,
-                Init = init,
-                Range = new Range { Start = firstToken.Range.Start, End = lastToken.Range.End },
-                Loc =
-                    new Loc
-                    {
-                        Start = new Loc.Position { Line = firstToken.Loc.Start.Line, Column = firstToken.Loc.Start.Column },
-                        End = new Loc.Position { Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column }
-                    }
-            };
+                return new VariableDeclarator(_codeGeneration)
+                           {
+                               Id = id,
+                               Init = init,
+                               Range = new Range {Start = firstToken.Range.Start, End = lastToken.Range.End},
+                               Loc =
+                                   new Loc
+                                       {
+                                           Start =
+                                               new Loc.Position
+                                                   {
+                                                       Line = firstToken.Loc.Start.Line,
+                                                       Column = firstToken.Loc.Start.Column
+                                                   },
+                                           End =
+                                               new Loc.Position
+                                                   {Line = lastToken.Loc.End.Line, Column = lastToken.Loc.End.Column}
+                                       }
+                           };
+            }
+            else
+            {
+                return new VariableDeclarator(_codeGeneration)
+                {
+                    Id = id,
+                    Init = init
+                };
+            }
         }
 
         private List<object> ParseVariableDeclarationList(string kind)

@@ -9,6 +9,6 @@ namespace Esprima.NET.Syntax
         }
 
         public Identifier Id { get; set; }
-        public ISyntax Init { get; set; }
+        public dynamic Init { get; set; }
     }
 }

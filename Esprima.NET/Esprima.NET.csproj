@@ -55,10 +55,12 @@
     <Compile Include="Syntax\ISyntax.cs" />
     <Compile Include="Syntax\Literal.cs" />
     <Compile Include="Syntax\Loc.cs" />
+    <Compile Include="Syntax\MemberExpression.cs" />
     <Compile Include="Syntax\Program.cs" />
     <Compile Include="Syntax\Range.cs" />
     <Compile Include="Syntax\SyntaxBase.cs" />
     <Compile Include="Syntax\ThisExpression.cs" />
+    <Compile Include="Syntax\UpdateExpression.cs" />
     <Compile Include="Syntax\VariableDeclaration.cs" />
     <Compile Include="Syntax\VariableDeclarator.cs" />
   </ItemGroup>
